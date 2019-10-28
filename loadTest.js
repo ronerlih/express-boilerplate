@@ -1,7 +1,7 @@
 const siege = require("siege");
 siege()
-  .on(3000)
+  .on(80)
   .concurrent(10)
-  .for(40000).times
+  .for(10).times
   .get('/')
   .attack()
