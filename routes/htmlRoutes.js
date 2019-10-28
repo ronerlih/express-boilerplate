@@ -1,4 +1,6 @@
 var db = require("../models");
+// Count the machine's CPUs
+var cpuCount = require("os").cpus().length;
 
 module.exports = function(app) {
   // Load index page
@@ -6,9 +8,9 @@ module.exports = function(app) {
     db.Example.findAll({}).then(function(dbExamples) {
       let workerId;
       app.clusterWorker ? workerId = app.clusterWorker.id : workerId = 0;
-      console.log('\n\n\nrunning on cpu:', workerId);
+      console.log('\n\n\nrunning on a machinecpu:', workerId);
       res.render("index", {
-        msg: "Welcome!\n Running worker:" + workerId,
+        msg: "Welcome!\n Running worker: " + workerId + " on a machine with " + cpuCount + "CPUs.",
         examples: dbExamples
       });
     });
