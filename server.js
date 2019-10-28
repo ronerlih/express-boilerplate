@@ -5,6 +5,7 @@
 require("dotenv").config();
 var express = require("express");
 var exphbs = require("express-handlebars");
+var fs = require("fs");
 var cluster = require("cluster");
 
 // Count the machine's CPUs
@@ -25,6 +26,7 @@ if (cluster.isMaster && CLUSTER) {
 
   var app = express();
   var PORT = process.env.PORT || 3000;
+  fs.writeFile("port.json", JSON.stringify({PORT: PORT}),function() {return;});
 
   // Middleware
   app.use(express.urlencoded({ extended: false }));
@@ -57,7 +59,7 @@ if (cluster.isMaster && CLUSTER) {
   db.sequelize.sync(syncOptions).then(function() {
     app.listen(PORT, function() {
       console.log(
-        "==> 🌎  Listening with cpu no. %s on port %s. Visit http://localhost:%s/ in your browser.",
+        "==> 🌎  Listening with worker no. %s on port %s. Visit http://localhost:%s/ in your browser.",
         cluster.worker ? cluster.worker.id : 0,
         PORT,
         PORT
