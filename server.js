@@ -1,47 +1,78 @@
+// exprews with clusters: https://rowanmanning.com/posts/node-cluster-and-express/
+// https://jasonmccreary.me/articles/installing-siege-mac-os-x-lion/
+// https://stackoverflow.com/questions/42367606/siege-https-error-https-requires-libssl
+/* eslint-disable prettier/prettier */
 require("dotenv").config();
 var express = require("express");
 var exphbs = require("express-handlebars");
+var cluster = require("cluster");
+
+// Count the machine's CPUs
+var cpuCount = require("os").cpus().length;
 
 var db = require("./models");
+var CLUSTER = true;
 
-var app = express();
-var PORT = process.env.PORT || 3000;
+if (cluster.isMaster && CLUSTER) {
 
-// Middleware
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
-app.use(express.static("public"));
+  // Create a worker for each CPU
+  for (var i = 0; i < cpuCount; i += 1) {
+    cluster.fork();
+  }
 
-// Handlebars
-app.engine(
-  "handlebars",
-  exphbs({
-    defaultLayout: "main"
-  })
-);
-app.set("view engine", "handlebars");
+// Code to run if we're in a worker process
+} else {
 
-// Routes
-require("./routes/apiRoutes")(app);
-require("./routes/htmlRoutes")(app);
+  var app = express();
+  var PORT = process.env.PORT || 3000;
 
-var syncOptions = { force: false };
+  // Middleware
+  app.use(express.urlencoded({ extended: false }));
+  app.use(express.json());
+  app.use(express.static("public"));
 
-// If running a test, set syncOptions.force to true
-// clearing the `testdb`
-if (process.env.NODE_ENV === "test") {
-  syncOptions.force = true;
+  // Handlebars
+  app.engine(
+    "handlebars",
+    exphbs({
+      defaultLayout: "main"
+    })
+  );
+  app.set("view engine", "handlebars");
+  app.clusterWorker = cluster.worker;
+
+  // Routes
+  require("./routes/apiRoutes")(app);
+  require("./routes/htmlRoutes")(app);
+
+  var syncOptions = { force: false };
+
+  // If running a test, set syncOptions.force to true
+  // clearing the `testdb`
+  if (process.env.NODE_ENV === "test") {
+    syncOptions.force = true;
+  }
+
+  // Starting the server, syncing our models ------------------------------------/
+  db.sequelize.sync(syncOptions).then(function() {
+    app.listen(PORT, function() {
+      console.log(
+        "==> 🌎  Listening with cpu no. %s on port %s. Visit http://localhost:%s/ in your browser.",
+        cluster.worker ? cluster.worker.id : 0,
+        PORT,
+        PORT
+      );
+    });
+  });
+
+  module.exports = app;
 }
 
-// Starting the server, syncing our models ------------------------------------/
-db.sequelize.sync(syncOptions).then(function() {
-  app.listen(PORT, function() {
-    console.log(
-      "==> 🌎  Listening on port %s. Visit http://localhost:%s/ in your browser.",
-      PORT,
-      PORT
-    );
-  });
-});
+cluster.on("exit", function (worker) {
 
-module.exports = app;
+  // Replace the dead worker,
+  // we're not sentimental
+  console.log("\n\n\nWorker %d died :(", worker.id);
+  cluster.fork();
+
+});

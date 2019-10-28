@@ -4,8 +4,11 @@ module.exports = function(app) {
   // Load index page
   app.get("/", function(req, res) {
     db.Example.findAll({}).then(function(dbExamples) {
+      let workerId;
+      app.clusterWorker ? workerId = app.clusterWorker.id : workerId = 0;
+      console.log('\n\n\nrunning on cpu:', workerId);
       res.render("index", {
-        msg: "Welcome!",
+        msg: "Welcome!\n Running worker:" + workerId,
         examples: dbExamples
       });
     });
