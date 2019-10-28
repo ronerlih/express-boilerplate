@@ -12,7 +12,7 @@ module.exports = function(app) {
       res.render("index", {
         msg: "Welcome!",
         examples: dbExamples,
-        clusterStats: "\n Running worker: " + workerId + " on a machine with " + cpuCount + "CPUs."
+        clusterStats: "\n Served by worker no. " + workerId + ", on a machine with " + cpuCount + "CPUs."
       });
     });
   });
