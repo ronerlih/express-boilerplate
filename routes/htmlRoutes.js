@@ -10,8 +10,9 @@ module.exports = function(app) {
       app.clusterWorker ? workerId = app.clusterWorker.id : workerId = 0;
       console.log('\n\n\nrunning on a machinecpu:', workerId);
       res.render("index", {
-        msg: "Welcome!\n Running worker: " + workerId + " on a machine with " + cpuCount + "CPUs.",
-        examples: dbExamples
+        msg: "Welcome!",
+        examples: dbExamples,
+        clusterStats: "\n Running worker: " + workerId + " on a machine with " + cpuCount + "CPUs."
       });
     });
   });
